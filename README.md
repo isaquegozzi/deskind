@@ -6,15 +6,15 @@ O MVP oferece cursor, rolagem pela caneta, pressão com caneta sintética, desen
 
 ## Estado atual
 
-MVP 0.1.0 concluído. As九个 etapas M0 a M9 do plano de implementação estão registradas como concluídas no `docs/mvp-plan.md`.
+MVP 0.1.0 concluído. As etapas M0 a M9 do plano de implementação estão registradas como concluídas no `docs/mvp-plan.md`.
 
-Duas ressalvas que a própria documentação do projeto faz:
+O MVP ainda tem limitações para uso em produção:
 
-**"M0 a M9 implementados" quer dizer completo em funcionalidade, não pronto para produção.** O documento de evidências do empacotamento (`docs/evidence/m9-packaging-2026-08-14.md`) lista o que ainda não está resolvido: o APK de release usa chave de debug, o instalador Windows não tem assinatura Authenticode, o caminho USB ainda depende do modo desenvolvedor do Android, e o mapeamento de coordenadas pode esticar a imagem quando o tablet e o monitor têm proporções diferentes.
+**As funcionalidades de M0 a M9 estão implementadas, mas isso não significa que o aplicativo esteja pronto para produção.** O APK de release usa uma chave de desenvolvimento, o instalador Windows não tem assinatura digital, a conexão USB exige o modo desenvolvedor do Android e a imagem pode ficar esticada quando o tablet e o monitor têm proporções diferentes. Esses pontos estão registrados em `docs/evidence/m9-packaging-2026-08-14.md`.
 
-**A latência medida não é "pen-to-photon".** O que se mede é o intervalo entre o instante da captura no tablet e o fim da decodificação no PC, antes de o evento ser injetado no Windows. O próprio projeto diz, em `docs/transport-performance.md`, que a medição não inclui o tempo de apresentação do aplicativo, a composição da tela, a resposta do painel nem a câmera, e que não deve ser apresentada como pen-to-photon.
+**A latência medida cobre apenas a captura no tablet e a decodificação no PC.** Ela não mede o tempo até o traço aparecer na tela, chamado de "pen-to-photon". A diferença está explicada em `docs/transport-performance.md`.
 
-Além disso, o M6.5 ficou parcial: houve um benchmark de fumaça, mas o ensaio prolongado de bateria e consumo e a medição pen-to-photon continuam pendentes. A fase 1.5 do plano, que vem depois do MVP, está quase toda pendente.
+Além disso, o M6.5 ficou parcial: foi feito um teste inicial de desempenho, mas o ensaio prolongado de bateria e consumo e a medição pen-to-photon continuam pendentes. A fase 1.5 do plano, que vem depois do MVP, está quase toda pendente.
 
 ## Funcionalidades implementadas
 
@@ -153,7 +153,7 @@ As portas são TCP 27185 para controle com TLS, UDP 27186 para input e UDP 27187
 - **Atalhos** cobrem copiar, colar, buscar, páginas e mídia.
 - Tocar no status abaixo de "DeskInk" abre o diagnóstico.
 
-**É preciso um tablet com caneta.** O dedo funciona para rolar. Um mouse conectado ao tablet não move o cursor no Windows: o tipo de ferramenta `MOUSE` é descartado na captura, de propósito, porque faria a、USB conflitar com o mouse físico.
+**É preciso um tablet com caneta.** O dedo funciona para rolar. Um mouse conectado ao tablet não move o cursor no Windows: o tipo de ferramenta `MOUSE` é descartado na captura, de propósito, para evitar conflito com o mouse físico.
 
 ## Organização do projeto
 
