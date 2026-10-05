@@ -10,7 +10,7 @@ MVP 0.1.0 concluído. As九个 etapas M0 a M9 do plano de implementação estão
 
 Duas ressalvas que a própria documentação do projeto faz:
 
-**"M0 a M9 implementados" quer dizer completo em functionality, não pronto para produção.** O documento de evidências do empacotamento (`docs/evidence/m9-packaging-2026-08-14.md`) lista o que ainda não está resolvido: o APK de release usa chave de debug, o instalador Windows não tem assinatura Authenticode, o caminho USB ainda depende do modo desenvolvedor do Android, e o mapeamento de coordenadas pode esticar a imagem quando o tablet e o monitor têm proporções diferentes.
+**"M0 a M9 implementados" quer dizer completo em funcionalidade, não pronto para produção.** O documento de evidências do empacotamento (`docs/evidence/m9-packaging-2026-08-14.md`) lista o que ainda não está resolvido: o APK de release usa chave de debug, o instalador Windows não tem assinatura Authenticode, o caminho USB ainda depende do modo desenvolvedor do Android, e o mapeamento de coordenadas pode esticar a imagem quando o tablet e o monitor têm proporções diferentes.
 
 **A latência medida não é "pen-to-photon".** O que se mede é o intervalo entre o instante da captura no tablet e o fim da decodificação no PC, antes de o evento ser injetado no Windows. O próprio projeto diz, em `docs/transport-performance.md`, que a medição não inclui o tempo de apresentação do aplicativo, a composição da tela, a resposta do painel nem a câmera, e que não deve ser apresentada como pen-to-photon.
 
@@ -236,7 +236,7 @@ O plano também deixa registrado, como restrição permanente, que colaboração
 
 ## Próximos passos
 
-O `docs/mvp-plan.md` tem uma recomendação explícita, na ordem de prioridade: estabilidade e menor latência, depois experiência de uso diário, depois novos transportes e plataformas, depois vídeo e tela remota, e por fim recursos avançados de anotação. A regra escrita é que mais functionality nunca justifica piorar latência, segurança ou recuperação após falhas.
+O `docs/mvp-plan.md` tem uma recomendação explícita, na ordem de prioridade: estabilidade e menor latência, depois experiência de uso diário, depois novos transportes e plataformas, depois vídeo e tela remota, e por fim recursos avançados de anotação. A regra escrita é que mais funcionalidade nunca justifica piorar latência, segurança ou recuperação após falhas.
 
 A recomendação literal do projeto é começar pela fase 1.5, **não** por streaming de tela. O primeiro pacote pós-MVP deveria combinar ensaio prolongado, simulador e testes de formato, calibração de área ativa e uma interface Windows simples. Só depois disso o USB nativo e a fundação para Linux avançam em paralelo, e a captura de tela só deveria começar quando a linha de base de latência e estabilidade estiver protegida.
 
