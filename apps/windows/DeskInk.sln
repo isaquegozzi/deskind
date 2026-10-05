@@ -1,0 +1,42 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeskInk.Core", "DeskInk.Core\DeskInk.Core.csproj", "{C0A327E5-242F-4B53-ADE6-35048945FA03}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeskInk.WindowsHost", "DeskInk.WindowsHost\DeskInk.WindowsHost.csproj", "{B40E8F79-577D-4500-8B89-7D6587D689D7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeskInk.Core.Tests", "DeskInk.Core.Tests\DeskInk.Core.Tests.csproj", "{DD4B746C-C831-4AF2-BC0A-F46F637EB494}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeskInk.Overlay", "DeskInk.Overlay\DeskInk.Overlay.csproj", "{A6BDA79C-81B2-4D30-95AF-B258509D4BB0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeskInk.InputSimulator", "DeskInk.InputSimulator\DeskInk.InputSimulator.csproj", "{8CE2189E-C08E-4DB8-BCEB-485A2DF2942B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C0A327E5-242F-4B53-ADE6-35048945FA03}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C0A327E5-242F-4B53-ADE6-35048945FA03}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C0A327E5-242F-4B53-ADE6-35048945FA03}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C0A327E5-242F-4B53-ADE6-35048945FA03}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B40E8F79-577D-4500-8B89-7D6587D689D7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B40E8F79-577D-4500-8B89-7D6587D689D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B40E8F79-577D-4500-8B89-7D6587D689D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B40E8F79-577D-4500-8B89-7D6587D689D7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DD4B746C-C831-4AF2-BC0A-F46F637EB494}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DD4B746C-C831-4AF2-BC0A-F46F637EB494}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DD4B746C-C831-4AF2-BC0A-F46F637EB494}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DD4B746C-C831-4AF2-BC0A-F46F637EB494}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A6BDA79C-81B2-4D30-95AF-B258509D4BB0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6BDA79C-81B2-4D30-95AF-B258509D4BB0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6BDA79C-81B2-4D30-95AF-B258509D4BB0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6BDA79C-81B2-4D30-95AF-B258509D4BB0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8CE2189E-C08E-4DB8-BCEB-485A2DF2942B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8CE2189E-C08E-4DB8-BCEB-485A2DF2942B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8CE2189E-C08E-4DB8-BCEB-485A2DF2942B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8CE2189E-C08E-4DB8-BCEB-485A2DF2942B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

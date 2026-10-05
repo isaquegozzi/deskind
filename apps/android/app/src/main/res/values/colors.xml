@@ -1,0 +1,7 @@
+<resources>
+    <color name="deskink_background">#101418</color>
+    <color name="deskink_surface">#182027</color>
+    <color name="deskink_text">#F0F4F7</color>
+    <color name="deskink_muted">#AAB8C2</color>
+    <color name="deskink_accent">#65D1A5</color>
+</resources>

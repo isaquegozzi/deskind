@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">DeskInk</string>
+    <string name="telemetry_title">DeskInk</string>
+    <string name="capture_surface_description">Área ativa da caneta</string>
+</resources>

@@ -1,89 +1,206 @@
-# Protocolo DeskInk
+# Protocolo DeskInk v1
 
-Status: design inicial de M0; o wire format será congelado e receberá vetores em
-M2. ADB não aparece em nenhum campo do protocolo.
+Status: wire format congelado para M2 em 2026-08-13. ADB não aparece em nenhum
+campo. Todos os inteiros são little-endian e nenhuma struct nativa é serializada.
 
-## Convenções
+## Canais e envelopes
 
-- Binário, little-endian, tamanho explícito e versão `major.minor`.
-- Inteiros sem sinal não podem ser negativos após decode.
-- Timestamps são microssegundos de relógio monotônico do emissor.
-- `sessionId` é aleatório por handshake; `sequence` cresce por data plane.
-- X/Y viajam como pixels locais `float32` e largura/altura da área acompanham a
-  configuração da sessão. Normalização/mapeamento ocorre explicitamente.
-- Valores opcionais têm flags de presença; zero não significa “não suportado”.
+- Control: confiável/ordenado, frames binários com prefixo `u32 frameLength`.
+- Input ADB: TCP dedicado, mesmo prefixo e frames `INPUT_BATCH`.
+- Input LAN (M6): um frame por datagrama UDP autenticado, sem prefixo TCP.
+- O frame lógico, decoder e máquina de estado são compartilhados; garantias de
+  TCP e UDP não são fingidas como equivalentes.
 
-## Planos
+TCP é stream: cada leitura pode conter parte de um frame ou vários frames. Um
+length divergente, acima do limite ou inconsistente encerra a sessão; o receiver
+não procura magic arbitrariamente no restante do stream.
 
-Control plane usa mensagens length-prefixed confiáveis: hello/version negotiation,
-session, capabilities, display/config, ping/pong, mode, shortcut e shutdown.
-
-Input data plane usa `InputBatch`. No ADB ele é framed sobre TCP dedicado; em LAN
-é um datagrama UDP autenticado. O payload lógico é idêntico. Uma implementação
-deve rejeitar payload excedente, truncado, count incoerente, versão major
-incompatível, sessão errada e flags reservadas.
-
-## Header v1 proposto (48 bytes)
+## Header v1 — 32 bytes
 
 | Offset | Tipo | Campo |
 | ---: | --- | --- |
-| 0 | u32 | magic `0x4B4E4944` (`DINK` em bytes) |
-| 4 | u16 | major |
-| 6 | u16 | minor |
-| 8 | u8 | packetType |
-| 9 | u8 | flags |
-| 10 | u16 | headerSize (=48 em v1) |
-| 12 | u32 | payloadLength |
-| 16 | u64 | sessionId |
-| 24 | u64 | sequence |
-| 32 | u64 | baseTimestampUs |
-| 40 | u16 | elementCount |
-| 42 | u16 | reserved (=0) |
-| 44 | u32 | CRC32C de header sem CRC + payload |
+| 0 | 4 bytes | magic ASCII `DSKI` |
+| 4 | u8 | major (=1) |
+| 5 | u8 | minor (=0) |
+| 6 | u8 | messageType |
+| 7 | u8 | flags |
+| 8 | u16 | headerBytes (=32) |
+| 10 | u16 | frameBytes (header + payload + auth tag) |
+| 12 | u64 | sessionId |
+| 20 | u32 | sequence |
+| 24 | u64 | baseMonotonicTimeUs |
 
-CRC32C detecta corrupção/bugs, mas não autentica. LAN acrescentará tag de
-autenticação definida no envelope do transporte; não haverá “criptografia caseira”.
+Major desconhecido é incompatível. Minor novo só pode acrescentar extensões
+trailing explicitamente opcionais. Flags reservadas diferentes de zero são
+rejeitadas em M2. `sessionId` é aleatório por handshake; não é autenticação.
 
-Limites iniciais: payload <= 64 KiB, samples por batch <= 256 e frames de control
-<= 1 MiB. Limites são validados antes de alocar e serão afinados por benchmark.
+Limites:
 
-## PenSample v1 proposto (40 bytes)
+- input frame sem fragmentação: no máximo 1200 bytes;
+- control frame: no máximo 65535 bytes;
+- input batch: 1..32 samples;
+- validar todos os limites antes de alocar.
 
-| Campo | Tipo | Semântica |
+## `INPUT_BATCH` — messageType `0x10`
+
+Prefixo do payload (4 bytes):
+
+| Tipo | Campo |
+| --- | --- |
+| u8 | sampleCount (1..32) |
+| u8 | toolKind |
+| u16 | pointerId |
+
+Um batch pertence a um pointer/tool. Eventos multipointer produzem batches
+independentes; pointer ID é estável no motion set, pointer index não é transmitido.
+
+### `PenSample` — 24 bytes
+
+| Tipo | Campo | Unidade/semântica |
 | --- | --- | --- |
-| deltaUs | u32 | diferença para `baseTimestampUs` |
-| x, y | 2 x f32 | coordenadas locais |
-| pressure | f32 | valor Android bruto válido pela flag |
-| tiltRadians | f32 | 0 perpendicular; válido pela flag |
-| orientationRadians | f32 | orientação Android; válido pela flag |
-| distance | f32 | eixo Android bruto; válido pela flag |
-| pointerId | i32 | id no motion set |
-| buttonState | u32 | máscara Android preservada |
-| action | u8 | down/move/up/hover/cancel |
-| toolType | u8 | finger/stylus/eraser/mouse/unknown |
-| sampleFlags | u16 | present/current/historical/in-contact |
+| u32 | deltaTimeUs | diferença para `baseMonotonicTimeUs` |
+| u32 | stateGeneration | incrementa em transição de contato/range/tool/button |
+| u16 | xNormalized | 0..65535 na largura da área ativa |
+| u16 | yNormalized | 0..65535 na altura da área ativa |
+| u16 | pressureNormalized | 0..65535, válido somente pela flag |
+| u16 | distanceNormalized | 0..65535, válido somente pela flag |
+| u16 | tiltCentidegrees | 0..9000, válido somente pela flag |
+| i16 | orientationCentidegrees | -18000..18000, válido somente pela flag |
+| u16 | buttons | máscara de botões preservada |
+| u16 | stateFlags | snapshot completo do estado |
 
-Na captura, historical samples usam a action semântica MOVE/HOVER e a flag
-`historical`; a transição atual mantém a action real. Transformação de tilt
-magnitude/orientation em tiltX/tiltY do Windows pertence ao adapter Win32.
+`stateFlags` v1:
 
-## Estado e sequência
+```text
+0x0001 IN_RANGE
+0x0002 CONTACT
+0x0004 PRESSURE_VALID
+0x0008 DISTANCE_VALID
+0x0010 TILT_VALID
+0x0020 ORIENTATION_VALID
+0x0040 HISTORICAL
+0x0080 CANCELED
+```
 
-DOWN abre um pointer; MOVE/UP precisam referenciar pointer aberto. CANCEL fecha o
-pointer sem produzir novo stroke. Duplicatas são ignoradas; regressão/reorder é
-contada e só aceita de acordo com a política do transporte. Snapshot periódico
-de estado e watchdog impedem input preso. Não se retransmite MOVE antigo em LAN.
+Campo opcional ausente fica zero com validity bit desligado. Zero com bit ligado é
+um valor real. `CONTACT` sem `IN_RANGE`, tilt > 9000 e orientation fora do range
+são inválidos. Cada sample é snapshot, não delta; DOWN/UPDATE/UP são derivados
+pela máquina de estado a partir de `CONTACT`, `IN_RANGE` e `stateGeneration`.
 
-## Compatibilidade
+Android transmite tilt escalar + orientation. TiltX/TiltY Win32 são derivados uma
+única vez no adapter Windows e testados em M4.
 
-- Major diferente: handshake falha.
-- Minor mais novo: aceito apenas quando tamanhos/flags desconhecidas podem ser
-  ignorados com segurança.
-- Campos novos entram por novo packet type ou extensão length-delimited.
-- Reserved não zero é rejeitado em v1.
+## Quantização
 
-## Vetores obrigatórios de M2
+```text
+normalized = round(clamp((value - min) / (max - min), 0, 1) * 65535)
+degrees100 = round(radians * 180/pi * 100)
+```
 
-Empty/hello, DOWN mínimo, MOVE com todos os campos, batch com 3 historical +
-current, UP, CANCEL, pressure 0/0.25/0.5/0.75/1, limites de tilt/orientation,
-bad magic, truncado, length/count inválido, NaN/Infinity e CRC incorreto.
+Ranges inválidos/não disponíveis desligam a validity flag. Na decodificação,
+inteiros normalizados permanecem inteiros até o mapper que possui os ranges da
+sessão, evitando NaN/Infinity no wire.
+
+## Sequência, cancelamento e failsafe
+
+- Duplicata: ignorar e contar.
+- Número mais novo com gap: aceitar, contar gap; não retransmitir MOVE antigo.
+- Reorder/stale: ignorar e contar.
+- `CANCELED`: liberar estado e entrar em `SuppressedUntilPhysicalRelease`.
+- Disconnect/watchdog: `ReleaseAll()` idempotente e supressão até observar snapshot
+  físico sem contato; pacote atrasado não pode ressuscitar DOWN.
+- Só frame válido, autenticado quando aplicável e mais novo alimenta watchdog.
+
+## Envelope de input LAN — M6
+
+O datagrama UDP contém o frame lógico `INPUT_BATCH` v1 seguido por uma tag de
+16 bytes:
+
+```text
+logicalFrame || HMAC-SHA-256(sessionSecret, logicalFrame)[0..16]
+```
+
+`sessionSecret` possui exatamente 32 bytes e é aleatório por sessão pareada. A
+tag é verificada em tempo constante antes do decode do frame. Session ID,
+sequence, timestamp, limites e versão continuam no header lógico compartilhado
+com USB. Datagramas truncados, alterados ou com chave errada são rejeitados.
+
+O host abre LAN apenas com `--enable-lan`: `27185/TCP` para controle TLS e
+`27186/UDP` para input. Ele cria um certificado ECDSA P-256 efêmero e exibe o
+fingerprint SHA-256 e o código de comparação `XXXX-XXXX`. O Android conecta por
+TLS, confirma que o certificado, o desafio e o código digitado representam o
+mesmo fingerprint e somente então envia `LAN_PAIR_CONFIRM`. `LAN_PAIR_ACK`, ainda
+dentro do TLS, entrega `sessionId`, segredo aleatório de 32 bytes, monitores e a
+porta UDP. O segredo nunca é derivado do código curto.
+
+Depois do primeiro datagrama autenticado, o host fixa o endpoint UDP da sessão.
+Duplicatas e pacotes antigos são descartados. Se nenhum frame válido chegar por
+750 ms, o host libera caneta/botões e exige uma amostra sem contato antes de
+reativar o input, impedindo um DOWN atrasado de ressuscitar.
+
+Discovery usa `27187/UDP`: o Android transmite uma query com nonce aleatório e o
+host responde diretamente ao remetente com o nonce, nome, porta de controle e
+fingerprint público. A resposta não contém segredo e não autentica o host; ela
+serve apenas para localizar e exibir o código que o usuário compara. A confiança
+continua sendo estabelecida somente pelo certificado TLS confirmado.
+
+Após o primeiro pareamento, o host mantém sua identidade no certificate store
+`CurrentUser/My` do Windows e o Android persiste somente o fingerprint público.
+Uma resposta de discovery com o mesmo fingerprint pode reconectar sem código;
+qualquer mudança de identidade bloqueia o pin e exige nova comparação manual.
+O `sessionSecret` não é persistido nem derivado do certificado: cada handshake
+TLS entrega um segredo UDP aleatório novo.
+
+## Segurança
+
+CRC não é autenticação e não faz parte do header v1. TCP já detecta corrupção de
+transporte; validação estrutural detecta bugs de framing. LAN acrescenta tag
+HMAC-SHA-256 truncada a 16 bytes sobre o frame lógico, com chave de
+sessão entregue dentro do control channel autenticado. A política ADB/loopback
+nunca pode ser selecionada por um peer LAN.
+
+## Golden vector M2
+
+`protocol/test-vectors/input-batch-v1.hex` contém um frame de 60 bytes com:
+
+```text
+sessionId 0x0102030405060708, sequence 42, base 1,000,000 us
+tool STYLUS, pointer 7
+delta 250 us, generation 9
+x 32768, y 16384, pressure 49151, distance 1234
+tilt 567, orientation -9000, button 32, flags 0x003F
+```
+
+O encoder Kotlin e o encoder/decoder C# devem produzir/consumir exatamente os
+mesmos bytes. Vetores inválidos cobrem magic, versão, frame length, sample count,
+flags/estados impossíveis e truncamento.
+
+## Handshake USB/ADB — M2.5
+
+O control channel usa frames com o mesmo header v1 e framing TCP `u32 length`:
+
+```text
+HELLO      (0x01): payload clientNonce u64; sessionId=0
+HELLO_ACK  (0x02): sessionId no header + bindToken[16] + monitorCount u8 + selectedMonitorIndex u8
+INPUT_BIND (0x03): sessionId no header + o mesmo bindToken de 16 bytes
+SET_MOUSE_MODE (0x20): sessionId no header + u8 (0=click/drag, 1=pen scroll)
+SET_MONITOR (0x21): sessionId no header + monitorIndex u8
+SET_OVERLAY_TOOL (0x22): sessionId + u8 (0=pen, 1=highlighter, 2=eraser)
+OVERLAY_COMMAND (0x23): sessionId + u8 (0=undo, 1=redo, 2=clear)
+SET_OVERLAY_MODE (0x24): sessionId + u8 (0=hidden, 1=click-through, 2=interactive)
+SET_OUTPUT_MODE (0x25): sessionId + u8 (0=mouse, 1=synthetic pen, 2=overlay)
+EXECUTE_SHORTCUT (0x26): sessionId + u8 allowlisted (copy, paste, find, page up,
+page down, media play/pause, volume down ou volume up)
+```
+
+O receiver aceita input somente após comparar o token em tempo constante. Ambos
+os listeners usam apenas `127.0.0.1`; ADB fornece os sockets através de
+`reverse tcp:27183 tcp:27183` e `reverse tcp:27184 tcp:27184`. O mapping é
+reaplicado após reconectar o cabo; não existe reconexão implícita no meio do stroke.
+O modo de mouse é latched no Android, persistido localmente e reenviado depois de
+cada handshake; não é inferido de bits reservados dos samples.
+A seleção de monitor também é persistida no Android. O host enumera os monitores,
+anuncia quantidade/índice no `HELLO_ACK` e valida cada `SET_MONITOR` antes de
+trocar o mapeamento de coordenadas.
+`EXECUTE_SHORTCUT` aceita somente a enumeração fixa validada nos dois lados. O
+host não recebe texto, caminho, processo ou linha de comando por esse frame.

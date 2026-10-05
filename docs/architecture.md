@@ -98,8 +98,10 @@ negativas.
 ### Overlay
 
 M5 mantém strokes vetoriais separados da injeção. Uma janela topmost por monitor
-alterna explicitamente entre interactive e click-through. O renderer planejado é
-Direct2D/DirectComposition, sujeito a protótipo e benchmark antes do gate M5.
+alterna explicitamente entre interactive e click-through. O renderer MVP rasteriza
+o modelo vetorial com GDI+ em uma superfície ARGB temporária e a apresenta com
+`UpdateLayeredWindow`; Direct2D/DirectComposition permanece candidato para troca
+somente se o profiling de M8 justificar.
 Anotações pertencem às coordenadas do monitor; ancoragem semântica não é MVP.
 
 ## Threading e backpressure

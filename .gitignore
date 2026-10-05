@@ -1,0 +1,34 @@
+# Ferramentas e IDE
+.tooling/
+.idea/
+.gradle/
+.kotlin/
+**/.kotlin/
+.vscode/
+*.iml
+
+# Build Android
+build/
+**/build/
+local.properties
+*.apk
+*.aab
+
+# Build Windows / .NET
+bin/
+**/bin/
+obj/
+**/obj/
+
+# Artefatos de execução (instaladores, pacotes portáteis, logs de dispositivo)
+artifacts/
+
+# Node
+node_modules/
+
+# Logs e temporários
+*.log
+
+# Sistema
+.DS_Store
+Thumbs.db
